@@ -17,8 +17,6 @@ def build_date_str():
 
 def fetch_instances():
     instances = json.loads(check_output("aws lightsail get-instances", shell=True))
-    print(instances)
-
     inst_names = []
     inst_dict = {}
     for instance in instances['instances']:
@@ -39,17 +37,19 @@ def build_inst_dict():
     return inst_dict
 
 
-def run_backup_all():
+def run_backup_all(test):
     inst_dict = build_inst_dict()
     date_str = build_date_str()
     for instance, snapshots in inst_dict.items():
         print('Creating: ' + instance + "-" + date_str)
-        check_output("aws lightsail create-instance-snapshot --instance-name " + instance + " --instance-snapshot-name "
-                     + instance + "-" + date_str, shell=True)
+        if not test:
+            check_output("aws lightsail create-instance-snapshot --instance-name " + instance + " --instance-snapshot-name "
+                         + instance + "-" + date_str, shell=True)
         if len(snapshots) > 2:
             sorted_snapshots = sorted(snapshots, key=lambda k: k['createdAt'])
             print('delete: ' + sorted_snapshots[0]['name'])
-            print(json.dumps(json.loads(check_output("aws lightsail delete-instance-snapshot --instance-snapshot-name "
+            if not test:
+                print(json.dumps(json.loads(check_output("aws lightsail delete-instance-snapshot --instance-snapshot-name "
                                                      + sorted_snapshots[0]['name'], shell=True))))
 
 
@@ -66,12 +66,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--b', '--backup', default=False, help='Backup current instances')
     parser.add_argument('--n', '--name', default='All', help='Backup one specific instance')
+    parser.add_argument('--t', '--test', default='True', help='Test with only output')
 
     args = parser.parse_args()
 
     if args.b == 'True':
         if args.n == 'All':
-            run_backup_all()
+            if args.t == 'True':
+                run_backup_all(True)
+            else:
+                run_backup_all(False)
         else:
             run_backup_name(args.n)
 
