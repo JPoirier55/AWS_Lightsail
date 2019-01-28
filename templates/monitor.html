@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+#instances {
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#instances td, #instances th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+#instances tr:nth-child(even){background-color: #f2f2f2;}
+
+#instances tr:hover {background-color: #ddd;}
+
+#instances th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #4CAF50;
+  color: white;
+}
+</style>
+</head>
+<body>
+<h1>AXI Lightsail Instances</h1>
+<table id="instances">
+    {% for key, value in instances.items %}
+        <tr>
+            <th><b>{{ key }}</b></th>
+        <th><b>Created</b></th>
+        <th><b>Size</b></th>
+        <th><b>Blueprint</b></th>
+        </tr>
+        {% for snap_dict in value %}
+            <tr>
+                <td>{{ snap_dict.name }}</td>
+            <td>{{ snap_dict.created }}</td>
+            <td>{{ snap_dict.size }}</td>
+            <td>{{ snap_dict.blueprint }}</td>
+            </tr>
+        {% endfor %}
+    {% endfor %}
+</table>
+</body>
+</html>
