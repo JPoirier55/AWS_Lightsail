@@ -47,7 +47,7 @@ def run_backup_all(test):
                          + instance + "-" + date_str, shell=True)
         if len(snapshots) > 2:
             sorted_snapshots = sorted(snapshots, key=lambda k: k['createdAt'])
-            print('delete: ' + sorted_snapshots[0]['name'])
+            print('Deleting: ' + sorted_snapshots[0]['name'])
             if not test:
                 print(json.dumps(json.loads(check_output("aws lightsail delete-instance-snapshot --instance-snapshot-name "
                                                      + sorted_snapshots[0]['name'], shell=True))))
@@ -73,6 +73,7 @@ if __name__ == '__main__':
     if args.b == 'True':
         if args.n == 'All':
             if args.t == 'True':
+                print('********Running Test***********')
                 run_backup_all(True)
             else:
                 run_backup_all(False)
