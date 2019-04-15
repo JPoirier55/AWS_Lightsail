@@ -26,6 +26,10 @@ def fetch_instances():
     return inst_dict
 
 
+def fetch_ec2_volumes():
+    return json.loads(check_output("aws ec2 describe-volumes", shell=True))
+
+
 def fetch_snapshots():
     return json.loads(check_output("aws lightsail get-instance-snapshots", shell=True))
 
@@ -38,7 +42,7 @@ def build_inst_dict():
     return inst_dict
 
 
-def run_backup_all(test):
+def backup_lightsail(test):
     inst_dict = build_inst_dict()
     date_str = build_date_str()
     message = []
@@ -49,22 +53,64 @@ def run_backup_all(test):
         print(create_msg)
         message.append(create_msg)
         if not test:
-            check_output("aws lightsail create-instance-snapshot --instance-name " + instance + " --instance-snapshot-name "
-                         + instance + "-" + date_str, shell=True)
+            check_output(
+                "aws lightsail create-instance-snapshot --instance-name " + instance + " --instance-snapshot-name "
+                + instance + "-" + date_str, shell=True)
         if len(snapshots) > 2:
             sorted_snapshots = sorted(snapshots, key=lambda k: k['createdAt'])
             delete_msg = 'Deleting: ' + sorted_snapshots[0]['name']
             print(delete_msg)
             message.append(delete_msg)
             if not test:
-                print(json.dumps(json.loads(check_output("aws lightsail delete-instance-snapshot --instance-snapshot-name "
-                                                     + sorted_snapshots[0]['name'], shell=True))))
+                print(json.dumps(
+                    json.loads(check_output("aws lightsail delete-instance-snapshot --instance-snapshot-name "
+                                            + sorted_snapshots[0]['name'], shell=True))))
+    return message
+
+
+def backup_ec2(test):
+    date_str = build_date_str()
+    volumes = fetch_ec2_volumes()
+    message = []
+    if test:
+        message.append("THIS IS A TEST")
+    for volume in volumes['Volumes']:
+        snaps = json.loads(check_output(
+            "aws ec2 describe-snapshots --filters Name=volume-id,Values={0}".format(volume['VolumeId']),
+            shell=True))
+        name_string = 'EC2_Volume_Snapshot_' + str(date_str)
+        create_msg = 'Creating: ' + name_string + "-" + date_str
+        print(create_msg)
+        message.append(create_msg)
+        if not test:
+            json.loads(check_output(
+                "aws ec2 create-snapshot --volume-id {0} --description {1}".format(volume['VolumeId'], name_string),
+                shell=True))
+        if len(snaps['Snapshots']) > 2:
+            sorted_snapshots = sorted(snaps['Snapshots'], key=lambda k: k['StartTime'])
+            print(sorted_snapshots[0])
+            delete_msg = 'Deleting: ' + sorted_snapshots[0]['Description']
+            message.append(delete_msg)
+            print(delete_msg)
+            if not test:
+                json.loads(
+                    check_output("aws ec2 delete-snapshot --snapshot-id {0}".format(sorted_snapshots[0]['SnapshotId']),
+                                 shell=True))
+
+    return message
+
+
+def run_backup_all(test):
+    ec2_message = backup_ec2(test)
+    lightsail_message = backup_lightsail(test)
+    email_message = ec2_message + lightsail_message
     if not test:
         email_builder.sendEmail('AWS Backup Completed', ['jake.poirier@axi-international.com'],
-                                message)
+                                email_message)
     else:
         email_builder.sendEmail('AWS Backup TEST', ['jake.poirier@axi-international.com'],
-                                message)
+                                email_message)
+
 
 def run_backup_name(instance):
     inst_dict = build_inst_dict()

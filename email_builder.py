@@ -36,7 +36,7 @@ def sendEmail(subject, recipients, msgText):
 
     # Credentials (if needed)
     username = 'remote.pc.axi@gmail.com'
-    password = ''
+    password = 'ModularCatGifs#4#$'
 
     # The actual mail send
     smtp = smtplib.SMTP('smtp.gmail.com', 587, None, 30)
@@ -49,4 +49,4 @@ def sendEmail(subject, recipients, msgText):
     smtp.close()
 
 if __name__ == "__main__":
-    sendEmail('t', ['jake.poirier@axi-international.com'], build_html_message(t))
+    sendEmail('t', ['jake.poirier@axi-international.com'], t)
