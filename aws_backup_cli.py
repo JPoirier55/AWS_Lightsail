@@ -121,22 +121,52 @@ def run_backup_name(instance):
                  "-" + date_str, shell=True)
 
 
+def key_word(item):
+    return datetime.datetime.strptime(item.split("p_")[1], "%m_%d_%y")
+
+
+def backup_s3():
+    s3_upload_location = 's3://axifuel-uploads/'
+    s3_backup_location = 's3://axifuel-backups/Website_Backup/'
+    json_obj = check_output("aws s3 ls " + s3_backup_location)
+    temp = str(json_obj).split('PRE ')
+    backup_arr = []
+    for folder in temp:
+        name = folder.split("/")[0]
+        if 'Backup' in name:
+            print(name)
+            backup_arr.append(name)
+    print(backup_arr)
+    sorted_backup_arr = sorted(backup_arr, key=key_word)
+    print(sorted_backup_arr)
+    oldest = sorted_backup_arr[0]
+    print('Deleting ' + oldest)
+    # check_output("aws s3 rm --recursive {0}".format(s3_backup_location + oldest), shell=True)
+    date_str = build_date_str()
+
+    print('Copying from: ' + s3_upload_location)
+    print('To: ' + s3_backup_location + "Backup_" + date_str)
+    # check_output("aws s3 mkdir {0}".format(s3_backup_location + "Backup_" + date_str), shell=True)
+    check_output("aws s3 cp --recursive {0} {1}".format(s3_upload_location,
+                                                        s3_backup_location + "Backup_" + date_str), shell=True)
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--b', '--backup', default=False, help='Backup current instances')
-    parser.add_argument('--n', '--name', default='All', help='Backup one specific instance')
-    parser.add_argument('--t', '--test', default='True', help='Test with only output')
-
-    args = parser.parse_args()
-
-    if args.b == 'True':
-        if args.n == 'All':
-            if args.t == 'True':
-                print('********Running Test***********')
-                run_backup_all(True)
-            else:
-                run_backup_all(False)
-        else:
-            run_backup_name(args.n)
+    backup_s3()
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--b', '--backup', default=False, help='Backup current instances')
+    # parser.add_argument('--n', '--name', default='All', help='Backup one specific instance')
+    # parser.add_argument('--t', '--test', default='True', help='Test with only output')
+    #
+    # args = parser.parse_args()
+    #
+    # if args.b == 'True':
+    #     if args.n == 'All':
+    #         if args.t == 'True':
+    #             print('********Running Test***********')
+    #             run_backup_all(True)
+    #         else:
+    #             run_backup_all(False)
+    #     else:
+    #         run_backup_name(args.n)
 
 
