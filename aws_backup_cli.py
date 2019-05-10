@@ -97,7 +97,6 @@ def backup_ec2(test):
                 shell=True))
         if len(snaps['Snapshots']) > 2:
             sorted_snapshots = sorted(snaps['Snapshots'], key=lambda k: k['StartTime'])
-            print(sorted_snapshots[0])
             delete_msg = 'Deleting: ' + sorted_snapshots[0]['Description']
             message.append(delete_msg)
             print(delete_msg)
@@ -152,10 +151,12 @@ def backup_s3(test):
     if len(sorted_backup_arr) > 2:
         oldest = sorted_backup_arr[0]
         delete_msg = 'Deleting ' + oldest
+        print(delete_msg)
         check_output("/home/bitnami/.local/bin/aws s3 rm --recursive {0}".format(s3_backup_location + oldest), shell=True)
         message.append(delete_msg)
     date_str = build_date_str_s3()
     create_msg = 'Copying from: ' + s3_upload_location + ' To: ' + s3_backup_location + "Backup_" + date_str
+    print(create_msg)
     message.append(create_msg)
     if not test:
         check_output("/home/bitnami/.local/bin/aws s3 mkdir {0}".format(s3_backup_location + "Backup_" + date_str), shell=True)
