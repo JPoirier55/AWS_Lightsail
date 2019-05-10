@@ -23,7 +23,7 @@ def build_html_message(message_arr):
     return html
 
 
-def sendEmail(subject, recipients, msgText):
+def sendEmail(subject, recipients, msgText, email, email_pw):
     '''Sends email to cell phone alerting user of sale/purchase'''
 
     # Build the message
@@ -35,8 +35,8 @@ def sendEmail(subject, recipients, msgText):
     msg.attach(emailContent)
 
     # Credentials (if needed)
-    username = 'remote.pc.axi@gmail.com'
-    password = ''
+    username = email
+    password = email_pw
 
     # The actual mail send
     smtp = smtplib.SMTP('smtp.gmail.com', 587, None, 30)
@@ -49,4 +49,4 @@ def sendEmail(subject, recipients, msgText):
     smtp.close()
 
 if __name__ == "__main__":
-    sendEmail('t', ['jake.poirier@axi-international.com'], t)
+    build_html_message(t)
