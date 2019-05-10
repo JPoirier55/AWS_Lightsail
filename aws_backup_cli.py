@@ -131,9 +131,21 @@ def key_word(item):
     return datetime.datetime.strptime(item.split("p_")[1], "%m_%d_%y")
 
 
-def backup_s3(test):
-    s3_upload_location = 's3://axifuel-uploads/'
-    s3_backup_location = 's3://axifuel-backups/Website_Backup/'
+def backup_webtools(test):
+    return backup_s3(test, 'webtools')
+
+
+def backup_wordpress(test):
+    return backup_s3(test, 'wordpress')
+
+
+def backup_s3(test, container):
+    if container == 'wordpress':
+        s3_upload_location = 's3://axifuel-uploads/'
+        s3_backup_location = 's3://axifuel-backups/Website_Backup/'
+    else:
+        s3_upload_location = 's3://axifuel-uploads/'
+        s3_backup_location = 's3://axifuel-backups/Webtools_Backup/'
     json_obj = check_output("/home/bitnami/.local/bin/aws s3 ls " + s3_backup_location, shell=True)
     temp = str(json_obj).split('PRE ')
     backup_arr = []
