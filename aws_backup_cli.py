@@ -71,9 +71,8 @@ def backup_lightsail(test):
             print(delete_msg)
             message.append(delete_msg)
             if not test:
-                print(json.dumps(
-                    json.loads(check_output("/home/bitnami/.local/bin/aws lightsail delete-instance-snapshot --instance-snapshot-name "
-                                            + sorted_snapshots[0]['name'], shell=True))))
+                check_output("/home/bitnami/.local/bin/aws lightsail delete-instance-snapshot --instance-snapshot-name "
+                                            + sorted_snapshots[0]['name'], shell=True)
     return message
 
 
@@ -92,18 +91,16 @@ def backup_ec2(test):
         print(create_msg)
         message.append(create_msg)
         if not test:
-            json.loads(check_output(
-                "/home/bitnami/.local/bin/aws ec2 create-snapshot --volume-id {0} --description {1}".format(volume['VolumeId'], name_string),
-                shell=True))
+            check_output("/home/bitnami/.local/bin/aws ec2 create-snapshot --volume-id {0} --description {1}".format(volume['VolumeId'], name_string),
+                shell=True)
         if len(snaps['Snapshots']) > 2:
             sorted_snapshots = sorted(snaps['Snapshots'], key=lambda k: k['StartTime'])
             delete_msg = 'Deleting: ' + sorted_snapshots[0]['Description']
             message.append(delete_msg)
             print(delete_msg)
             if not test:
-                json.loads(
-                    check_output("/home/bitnami/.local/bin/aws ec2 delete-snapshot --snapshot-id {0}".format(sorted_snapshots[0]['SnapshotId']),
-                                 shell=True))
+                check_output("/home/bitnami/.local/bin/aws ec2 delete-snapshot --snapshot-id {0}".format(sorted_snapshots[0]['SnapshotId']),
+                             shell=True)
 
     return message
 
@@ -162,6 +159,7 @@ def backup_s3(test):
         check_output("/home/bitnami/.local/bin/aws s3 mkdir {0}".format(s3_backup_location + "Backup_" + date_str), shell=True)
         check_output("/home/bitnami/.local/bin/aws s3 cp --recursive {0} {1}".format(s3_upload_location,
                                                             s3_backup_location + "Backup_" + date_str), shell=True)
+    return message
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

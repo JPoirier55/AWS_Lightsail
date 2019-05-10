@@ -13,7 +13,7 @@ def build_html_message(message_arr):
     html = '<table cellpadding="0" cellspacing="0" border="0" width="100%" ' \
            'style="font-family: Courier; font-size: 15px;">'
     for string in message_arr:
-        if 'Creating' in string:
+        if 'Creating' or 'Copying' in string:
             html += '<tr style="color: #4392f1;"><th align="left" style="padding-bottom: 5px;">' + string + "</th></tr>"
         elif 'Deleting' in string:
             html += '<tr style="color: #dc493a;"><th align="left" style="padding-bottom: 5px;">' + string + "</th></tr>"
