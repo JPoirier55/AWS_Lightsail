@@ -152,7 +152,8 @@ def backup_s3(test):
         oldest = sorted_backup_arr[0]
         delete_msg = 'Deleting ' + oldest
         print(delete_msg)
-        check_output("/home/bitnami/.local/bin/aws s3 rm --recursive {0}".format(s3_backup_location + oldest), shell=True)
+        if not test:
+            check_output("/home/bitnami/.local/bin/aws s3 rm --recursive {0}".format(s3_backup_location + oldest), shell=True)
         message.append(delete_msg)
     date_str = build_date_str_s3()
     create_msg = 'Copying from: ' + s3_upload_location + ' To: ' + s3_backup_location + "Backup_" + date_str
@@ -177,6 +178,7 @@ if __name__ == '__main__':
         if args.n == 'All':
             if args.t == 'True':
                 print('********Running Test***********')
+                print(datetime.datetime.now())
                 run_backup_all(True, args.e, args.p)
             else:
                 run_backup_all(False, args.e, args.p)
