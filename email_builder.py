@@ -13,10 +13,12 @@ def build_html_message(message_arr):
     html = '<table cellpadding="0" cellspacing="0" border="0" width="100%" ' \
            'style="font-family: Courier; font-size: 15px;">'
     for string in message_arr:
-        if 'Creating' or 'Copying' in string:
+        if 'Creating' in string:
             html += '<tr style="color: #4392f1;"><th align="left" style="padding-bottom: 5px;">' + string + "</th></tr>"
         elif 'Deleting' in string:
             html += '<tr style="color: #dc493a;"><th align="left" style="padding-bottom: 5px;">' + string + "</th></tr>"
+        elif 'Copying' in string:
+            html += '<tr style="color: #8E44AD;"><th align="left" style="padding-bottom: 5px;">' + string + "</th></tr>"
         else:
             html += '<tr style="color: black;"><th align="left" style="padding-bottom: 5px; font-size: 25px;">' + string + "</th></tr>"
     html += "</table>"
@@ -28,7 +30,7 @@ def sendEmail(subject, recipients, msgText, email, email_pw):
 
     # Build the message
     msg = MIMEMultipart()
-    msg['From'] = 'AXI AWS Backup'
+    msg['From'] = 'AWS AXI Backup <webtools@axi-international.com>'
     msg['To'] = ", ".join(recipients)
     msg['Subject'] = subject
     emailContent = MIMEText(build_html_message(msgText), 'html')
@@ -39,7 +41,7 @@ def sendEmail(subject, recipients, msgText, email, email_pw):
     password = email_pw
 
     # The actual mail send
-    smtp = smtplib.SMTP('smtp.gmail.com', 587, None, 30)
+    smtp = smtplib.SMTP('smtp.sendgrid.net', 587, None, 30)
 
     smtp.ehlo()
     smtp.starttls()

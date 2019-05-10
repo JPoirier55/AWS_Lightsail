@@ -87,7 +87,7 @@ def backup_ec2(test):
             "/home/bitnami/.local/bin/aws ec2 describe-snapshots --filters Name=volume-id,Values={0}".format(volume['VolumeId']),
             shell=True))
         name_string = 'EC2_Volume_Snapshot_' + str(date_str)
-        create_msg = 'Creating: ' + name_string + "-" + date_str
+        create_msg = 'Creating: ' + name_string
         print(create_msg)
         message.append(create_msg)
         if not test:
@@ -108,8 +108,9 @@ def backup_ec2(test):
 def run_backup_all(test, email, password):
     ec2_message = backup_ec2(test)
     lightsail_message = backup_lightsail(test)
-    s3_message = backup_s3(test)
-    email_message = ec2_message + lightsail_message + s3_message
+    s3_webtools_message = backup_s3(test, 'webtools')
+    s3_wordpress_message = backup_s3(test, 'wordpress')
+    email_message = ec2_message + lightsail_message + s3_webtools_message + s3_wordpress_message
     if not test:
         email_builder.sendEmail('AWS Backup Completed', ['jake.poirier@axi-international.com'],
                                 email_message, email, password)
@@ -144,7 +145,7 @@ def backup_s3(test, container):
         s3_upload_location = 's3://axifuel-uploads/'
         s3_backup_location = 's3://axifuel-backups/Website_Backup/'
     else:
-        s3_upload_location = 's3://axifuel-uploads/'
+        s3_upload_location = 's3://axifuel-webtool/'
         s3_backup_location = 's3://axifuel-backups/Webtools_Backup/'
     json_obj = check_output("/home/bitnami/.local/bin/aws s3 ls " + s3_backup_location, shell=True)
     temp = str(json_obj).split('PRE ')
@@ -180,18 +181,18 @@ if __name__ == '__main__':
     parser.add_argument('--n', '--name', default='All', help='Backup one specific instance')
     parser.add_argument('--t', '--test', default='True', help='Test with only output')
     parser.add_argument('--e', '--email', default='', help='Email Login')
-    parser.add_argument('--p', '--pw', default='', help='Email Pw')
 
     args = parser.parse_args()
-
+    pw_file = open('password', 'r')
+    pw = pw_file.read()
     if args.b == 'True':
         if args.n == 'All':
             if args.t == 'True':
                 print('********Running Test***********')
                 print(datetime.datetime.now())
-                run_backup_all(True, args.e, args.p)
+                run_backup_all(True, args.e, pw)
             else:
-                run_backup_all(False, args.e, args.p)
+                run_backup_all(False, args.e, pw)
         else:
             run_backup_name(args.n)
 
