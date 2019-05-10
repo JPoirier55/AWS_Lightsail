@@ -109,17 +109,17 @@ def backup_ec2(test):
     return message
 
 
-def run_backup_all(test):
+def run_backup_all(test, email, password):
     ec2_message = backup_ec2(test)
     lightsail_message = backup_lightsail(test)
     s3_message = backup_s3(test)
     email_message = ec2_message + lightsail_message + s3_message
     if not test:
         email_builder.sendEmail('AWS Backup Completed', ['jake.poirier@axi-international.com'],
-                                email_message)
+                                email_message, email, password)
     else:
         email_builder.sendEmail('AWS Backup TEST', ['jake.poirier@axi-international.com'],
-                                email_message)
+                                email_message, email, password)
 
 
 def run_backup_name(instance):
@@ -167,6 +167,8 @@ if __name__ == '__main__':
     parser.add_argument('--b', '--backup', default=False, help='Backup current instances')
     parser.add_argument('--n', '--name', default='All', help='Backup one specific instance')
     parser.add_argument('--t', '--test', default='True', help='Test with only output')
+    parser.add_argument('--e', '--email', default='', help='Email Login')
+    parser.add_argument('--p', '--pw', default='', help='Email Pw')
 
     args = parser.parse_args()
 
@@ -174,9 +176,9 @@ if __name__ == '__main__':
         if args.n == 'All':
             if args.t == 'True':
                 print('********Running Test***********')
-                run_backup_all(True)
+                run_backup_all(True, args.e, args.p)
             else:
-                run_backup_all(False)
+                run_backup_all(False, args.e, args.p)
         else:
             run_backup_name(args.n)
 
