@@ -6,6 +6,13 @@ import email_builder
 
 
 def build_date_str():
+    """
+    Creates date string that looks like
+    02_14_19_H9_M30
+    Used to tack on to end to create unique name
+
+    :return: string
+    """
     date = datetime.datetime.now()
     mo = date.month
     day = date.day
@@ -17,6 +24,13 @@ def build_date_str():
 
 
 def build_date_str_s3():
+    """
+    Creates date string that looks like
+    02_14_19
+    Used to tack on to end of S3 backup
+
+    :return: string
+    """
     date = datetime.datetime.now()
     mo = date.month
     day = date.day
@@ -26,6 +40,10 @@ def build_date_str_s3():
 
 
 def fetch_instances():
+    """
+    Gets all instances of lightsail containers
+    :return: dict of lightsail containers
+    """
     instances = json.loads(check_output("/home/bitnami/.local/bin/aws lightsail get-instances", shell=True))
     inst_names = []
     inst_dict = {}
@@ -36,14 +54,36 @@ def fetch_instances():
 
 
 def fetch_ec2_volumes():
+    """
+    Gets all ec2 volumes
+    :return: json of all volumes
+    """
     return json.loads(check_output("/home/bitnami/.local/bin/aws ec2 describe-volumes", shell=True))
 
 
+def key_word(item):
+    """
+    Method to sort dates for S3 backup folders
+    :param item: list of folder names
+    :return: sorted dict
+    """
+    return datetime.datetime.strptime(item.split("p_")[1], "%m_%d_%y")
+
+
 def fetch_snapshots():
+    """
+    Gets all current lightsail snapshots
+    :return: json of snapshots
+    """
     return json.loads(check_output("/home/bitnami/.local/bin/aws lightsail get-instance-snapshots", shell=True))
 
 
 def build_inst_dict():
+    """
+    Builds list of snapshots for each instance
+    and appends to the current inst dict
+    :return: inst dict with snapshot list
+    """
     inst_dict = fetch_instances()
     snapshots = fetch_snapshots()
     for snapshot in snapshots['instanceSnapshots']:
@@ -52,6 +92,14 @@ def build_inst_dict():
 
 
 def backup_lightsail(test):
+    """
+    Uses the instance dictionary to create a new snapshot
+    and then delete the oldest one if there are greater than
+    2 snapshots currently
+
+    :param test: boolean if running test (--t in cli)
+    :return: message that sends to email (list of created or deleted items)
+    """
     inst_dict = build_inst_dict()
     date_str = build_date_str()
     message = []
@@ -77,6 +125,12 @@ def backup_lightsail(test):
 
 
 def backup_ec2(test):
+    """
+    Backs up Ec2 volumes and deletes the oldest one
+    if there are more than 2
+    :param test: boolean if running test (--t in cli)
+    :return: message that sends to email (list of created or deleted items)
+    """
     date_str = build_date_str()
     volumes = fetch_ec2_volumes()
     message = []
@@ -105,33 +159,6 @@ def backup_ec2(test):
     return message
 
 
-def run_backup_all(test, email, password):
-    ec2_message = backup_ec2(test)
-    lightsail_message = backup_lightsail(test)
-    s3_webtools_message = backup_s3(test, 'webtools')
-    s3_wordpress_message = backup_s3(test, 'wordpress')
-    email_message = ec2_message + lightsail_message + s3_webtools_message + s3_wordpress_message
-    if not test:
-        email_builder.sendEmail('AWS Backup Completed', ['jake.poirier@axi-international.com'],
-                                email_message, email, password)
-    else:
-        email_builder.sendEmail('AWS Backup TEST', ['jake.poirier@axi-international.com'],
-                                email_message, email, password)
-
-
-def run_backup_name(instance):
-    inst_dict = build_inst_dict()
-    date_str = build_date_str()
-    print('Creating: ' + instance + "-" + date_str)
-    check_output("/home/bitnami/.local/bin/aws lightsail create-instance-snapshot --instance-name " +
-                 instance + " --instance-snapshot-name " + instance +
-                 "-" + date_str, shell=True)
-
-
-def key_word(item):
-    return datetime.datetime.strptime(item.split("p_")[1], "%m_%d_%y")
-
-
 def backup_webtools(test):
     return backup_s3(test, 'webtools')
 
@@ -141,6 +168,15 @@ def backup_wordpress(test):
 
 
 def backup_s3(test, container):
+    """
+    Backs up S3 folders for both website and webtools
+    This method parses the returns of what the AWS cli gives
+    It doesnt return a good json to parse, so it must be pieced apart
+
+    :param container: wordpress or webtools
+    :param test: boolean if running test (--t in cli)
+    :return: message that sends to email (list of created or deleted items)
+    """
     if container == 'wordpress':
         s3_upload_location = 's3://axifuel-uploads/'
         s3_backup_location = 's3://axifuel-backups/Website_Backup/'
@@ -175,6 +211,43 @@ def backup_s3(test, container):
                                                             s3_backup_location + "Backup_" + date_str), shell=True)
     return message
 
+
+def run_backup_all(test, email, password):
+    """
+    Main method to run all backups
+
+    :param email: email to be sent to (default is apikey for sendgrid)
+    :param password: password read from pw file for email
+    :return: none
+    """
+    ec2_message = backup_ec2(test)
+    lightsail_message = backup_lightsail(test)
+    s3_webtools_message = backup_s3(test, 'webtools')
+    s3_wordpress_message = backup_s3(test, 'wordpress')
+    email_message = ec2_message + lightsail_message + s3_webtools_message + s3_wordpress_message
+    if not test:
+        email_builder.sendEmail('AWS Backup Completed', ['jake.poirier@axi-international.com'],
+                                email_message, email, password)
+    else:
+        email_builder.sendEmail('AWS Backup TEST', ['jake.poirier@axi-international.com'],
+                                email_message, email, password)
+
+
+def run_backup_name(instance):
+    """
+    backup single lightsail instance
+    Deprecated
+    :param instance:
+    :return:
+    """
+    inst_dict = build_inst_dict()
+    date_str = build_date_str()
+    print('Creating: ' + instance + "-" + date_str)
+    check_output("/home/bitnami/.local/bin/aws lightsail create-instance-snapshot --instance-name " +
+                 instance + " --instance-snapshot-name " + instance +
+                 "-" + date_str, shell=True)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--b', '--backup', default=False, help='Backup current instances')
@@ -183,7 +256,7 @@ if __name__ == '__main__':
     parser.add_argument('--e', '--email', default='', help='Email Login')
 
     args = parser.parse_args()
-    pw_file = open('password', 'r')
+    pw_file = open('/home/bitnami/AWS_Lightsail/password', 'r')
     pw = pw_file.read()
     if args.b == 'True':
         if args.n == 'All':
